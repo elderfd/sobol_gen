@@ -1,7 +1,7 @@
 import numpy
 
 
-def highBitPos(i):
+def high_bit_pos(i):
     """Converts a positive integer to base 2 and returns the position of the high order bit.
 
     Keyword arguments:
@@ -18,7 +18,7 @@ def highBitPos(i):
     return bit
 
 
-def lowBitPos(i):
+def low_bit_pos(i):
     """Converts a positive integer to base 2 and returns the position of the low order bit.
 
     Keyword arguments:

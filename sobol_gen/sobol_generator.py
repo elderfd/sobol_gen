@@ -1,15 +1,15 @@
 import numpy
-from .utility import highBitPos, lowBitPos
+from .utility import high_bit_pos, low_bit_pos
 
 
 class SobolGenerator(object):
     """Handles all aspects of Sobol' sequence generation."""
 
-    nMax = 40
-    nMin = 1
-    logMax = 30
-    intTypeString = "i4"
-    intType = numpy.int32
+    n_max = 40
+    n_min = 1
+    log_max = 30
+    int_type_string = "i4"
+    int_type = numpy.int32
 
     def __init__(
         self,
@@ -20,16 +20,16 @@ class SobolGenerator(object):
         self.n = n
 
         if seed is None:
-            self.seed = SobolGenerator.goodSeeds[self.n]
+            self.seed = SobolGenerator.good_seeds[self.n]
         else:
-            self.seed = SobolGenerator.intType(seed)
+            self.seed = SobolGenerator.int_type(seed)
 
         self.leap = leap
 
-        self.lastQ = numpy.zeros(self.n, SobolGenerator.intTypeString)
+        self.last_q = numpy.zeros(self.n, SobolGenerator.int_type_string)
 
         for i in range(self.seed):
-            self.lastQ = self.nextQ(self.lastQ, i)
+            self.last_q = self.nextQ(self.last_q, i)
 
     @property
     def n(self):
@@ -37,15 +37,15 @@ class SobolGenerator(object):
 
     @n.setter
     def n(self, value):
-        if value < SobolGenerator.nMin or value > SobolGenerator.nMax:
+        if value < SobolGenerator.n_min or value > SobolGenerator.n_max:
             raise RuntimeError(
                 "Number of dimensions specified outside of range [{0}, {1}]".format(
-                    SobolGenerator.nMin, SobolGenerator.nMax
+                    SobolGenerator.n_min, SobolGenerator.n_max
                 )
             )
 
         self._n = value
-        self.v = numpy.copy(SobolGenerator.baseV)
+        self.v = numpy.copy(SobolGenerator.base_v)
 
         for i in range(1, self.n):
             j = SobolGenerator.poly[i]
@@ -62,23 +62,23 @@ class SobolGenerator(object):
                 include[k] = (j != 2 * j2)
                 j = j2
 
-            for j in range(m, SobolGenerator.maxCol):
-                newV = self.v[i, j - m]
+            for j in range(m, SobolGenerator.max_col):
+                new_v = self.v[i, j - m]
                 l = 1
                 for k in range(m):
                     l *= 2
                     if include[k]:
-                        newV = numpy.bitwise_xor(
-                            newV, l * self.v[i, j - k - 1]
+                        new_v = numpy.bitwise_xor(
+                            new_v, l * self.v[i, j - k - 1]
                         )
-                self.v[i, j] = newV
+                self.v[i, j] = new_v
 
         l = 1
-        for j in reversed(range(0, SobolGenerator.maxCol - 1)):
+        for j in reversed(range(0, SobolGenerator.max_col - 1)):
             l *= 2
             self.v[:, j] *= l
 
-        self.recipD = 1.0 / float(2 * l)
+        self.recip_d = 1.0 / float(2 * l)
 
     def generate(self, N, seed = None, leap = None):
         """Generates a Sobol' sequence.
@@ -96,16 +96,16 @@ class SobolGenerator(object):
             leap = self.leap
 
         matrix = numpy.full((N, self.n), numpy.nan)
-        nextOutput = seed
-        numberOutput = 0
+        next_output = seed
+        number_output = 0
 
-        while numberOutput < N:
+        while number_output < N:
             element = self.element(seed)
 
-            if seed == nextOutput:
-                matrix[numberOutput, :] = element
-                nextOutput += leap + 1
-                numberOutput += 1
+            if seed == next_output:
+                matrix[number_output, :] = element
+                next_output += leap + 1
+                number_output += 1
 
             seed += 1
 
@@ -120,98 +120,98 @@ class SobolGenerator(object):
 
         if seed == 0:
             self.seed = 0
-            self.lastQ = numpy.zeros(self.n, SobolGenerator.intTypeString)
+            self.last_q = numpy.zeros(self.n, SobolGenerator.int_type_string)
         elif seed > self.seed:
             for i in range(self.seed, seed):
-                self.lastQ = self.nextQ(self.lastQ, self.seed)
+                self.last_q = self.nextQ(self.last_q, self.seed)
                 self.seed += 1
         elif seed < self.seed:
-            self.lastQ = numpy.zeros(self.n, SobolGenerator.intTypeString)
+            self.last_q = numpy.zeros(self.n, SobolGenerator.int_type_string)
             self.seed = 0
             for i in range(0, seed):
-                self.lastQ = self.nextQ(self.lastQ, self.seed)
+                self.last_q = self.nextQ(self.last_q, self.seed)
                 self.seed += 1
 
-        vec = self.lastQ * self.recipD
+        vec = self.last_q * self.recip_d
 
-        self.lastQ = self.nextQ(self.lastQ, self.seed)
+        self.last_q = self.nextQ(self.last_q, self.seed)
         self.seed += 1
 
         return vec
 
-    def nextQ(self, lastQ, seed):
+    def nextQ(self, last_q, seed):
         """Generates the next value of Q in the sequence
 
         Keyword arguments:
-        lastQ -- The last Q in the sequence
+        last_q -- The last Q in the sequence
         seed -- The seed used to generate the last Q
         """
 
         if seed == 0:
             l = 1
         else:
-            l = lowBitPos(seed)
+            l = low_bit_pos(seed)
 
-        if l >= SobolGenerator.maxCol:
+        if l >= SobolGenerator.max_col:
             raise RuntimeError(
                 "Requested element too far into sequence. Element {0} requested but \
                 element {1} is maximum".format(
-                    seed + 1, SobolGenerator.atMost
+                    seed + 1, SobolGenerator.at_most
                 )
             )
 
-        return numpy.bitwise_xor(lastQ, self.v[0:self.n, l - 1])
+        return numpy.bitwise_xor(last_q, self.v[0:self.n, l - 1])
 
 
-SobolGenerator.atMost = 2 ** SobolGenerator.logMax - 1
-SobolGenerator.maxCol = highBitPos(SobolGenerator.atMost)
-SobolGenerator.goodSeeds = numpy.array(
+SobolGenerator.at_most = 2 ** SobolGenerator.log_max - 1
+SobolGenerator.max_col = high_bit_pos(SobolGenerator.at_most)
+SobolGenerator.good_seeds = numpy.array(
     [0, 0, 1, 3, 5, 8, 11, 15, 19, 23, 27, 31, 35],
-    SobolGenerator.intTypeString
+    SobolGenerator.int_type_string
 )
-SobolGenerator.baseV = numpy.zeros(
-    (SobolGenerator.nMax, SobolGenerator.logMax),
-    SobolGenerator.intTypeString
+SobolGenerator.base_v = numpy.zeros(
+    (SobolGenerator.n_max, SobolGenerator.log_max),
+    SobolGenerator.int_type_string
 )
-SobolGenerator.baseV[:, 0] = 1
-SobolGenerator.baseV[2:SobolGenerator.nMax, 1] = numpy.transpose([
+SobolGenerator.base_v[:, 0] = 1
+SobolGenerator.base_v[2:SobolGenerator.n_max, 1] = numpy.transpose([
           1, 3, 1, 3, 1, 3, 3, 1,
     3, 1, 3, 1, 3, 1, 1, 3, 1, 3,
     1, 3, 1, 3, 3, 1, 1, 1, 3, 1,
     3, 1, 3, 3, 1, 3, 1, 1, 1, 3
 ])
-SobolGenerator.baseV[3:SobolGenerator.nMax, 2] = numpy.transpose([
+SobolGenerator.base_v[3:SobolGenerator.n_max, 2] = numpy.transpose([
              7, 5, 1, 3, 3, 7, 5,
     5, 7, 7, 1, 3, 3, 7, 5, 1, 1,
     5, 3, 7, 1, 7, 5, 1, 3, 7, 7,
     1, 1, 1, 5, 7, 7, 5, 1, 3, 3
 ])
-SobolGenerator.baseV[5:SobolGenerator.nMax, 3] = numpy.transpose([
+SobolGenerator.base_v[5:SobolGenerator.n_max, 3] = numpy.transpose([
                         1, 7,  9,  13, 11,
     1, 3,  7,  9,  5,  13, 13, 11, 3,  15,
     5, 3,  15, 7,  9,  13, 9,  1,  11, 7,
     5, 15, 1,  15, 11, 5,  11,  1,  7,  9
 ])
-SobolGenerator.baseV[7:SobolGenerator.nMax, 4] = numpy.transpose([
+SobolGenerator.base_v[7:SobolGenerator.n_max, 4] = numpy.transpose([
                                 9,  3,  27,
     15, 29, 21, 23, 19, 11, 25, 7,  13, 17,
     1,  25, 29, 3,  31, 11, 5,  23, 27, 19,
     21, 5,  1,  17, 13, 7,  15, 9,  31, 25
 ])
-SobolGenerator.baseV[13:SobolGenerator.nMax, 5] = numpy.transpose([
+SobolGenerator.base_v[13:SobolGenerator.n_max, 5] = numpy.transpose([
                 37, 33, 7,  5,  11, 39, 63,
     59, 17, 15, 23, 29, 3,  21, 13, 31, 25,
     9,  49, 33, 19, 29, 11, 19, 27, 15, 25
 ])
-SobolGenerator.baseV[19:SobolGenerator.nMax, 6] = numpy.transpose([
+SobolGenerator.base_v[19:SobolGenerator.n_max, 6] = numpy.transpose([
                                            13,
     33, 115, 41, 79, 17, 29,  119, 75, 73, 105,
     7,  59,  65, 21, 3,  113, 61,  89, 45, 107
 ])
-SobolGenerator.baseV[37:SobolGenerator.nMax, 7] = numpy.transpose([
+SobolGenerator.base_v[37:SobolGenerator.n_max, 7] = numpy.transpose([
     7, 23, 39
 ])
-SobolGenerator.baseV[0, :] = 1
+SobolGenerator.base_v[0, :] = 1
 SobolGenerator.poly = numpy.array(
     [
         1, 3, 7, 11, 13, 19, 25, 37, 59, 47,
@@ -219,5 +219,5 @@ SobolGenerator.poly = numpy.array(
         193, 137, 145, 143, 241, 157, 185, 167, 229, 171,
         213, 191, 253, 203, 211, 239, 247, 285, 369, 299
     ],
-    SobolGenerator.intTypeString
+    SobolGenerator.int_type_string
 )
