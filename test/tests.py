@@ -14,7 +14,7 @@ class SobolGeneratorTests(unittest.TestCase):
         self.assertEqual(first.shape, second.shape)
 
         for i, row in enumerate(first):
-            for j, col in enumerate(row):
+            for j in range(len(row)):
                 self.assertEqual(
                     round(first[i, j], 6),
                     round(second[i, j], 6),

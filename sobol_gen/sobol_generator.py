@@ -122,13 +122,13 @@ class SobolGenerator(object):
             self.seed = 0
             self.last_q = numpy.zeros(self.n, SobolGenerator.int_type_string)
         elif seed > self.seed:
-            for i in range(self.seed, seed):
+            for _ in range(self.seed, seed):
                 self.last_q = self.nextQ(self.last_q, self.seed)
                 self.seed += 1
         elif seed < self.seed:
             self.last_q = numpy.zeros(self.n, SobolGenerator.int_type_string)
             self.seed = 0
-            for i in range(0, seed):
+            for _ in range(0, seed):
                 self.last_q = self.nextQ(self.last_q, self.seed)
                 self.seed += 1
 
